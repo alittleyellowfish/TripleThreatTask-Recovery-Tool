@@ -4,7 +4,8 @@
 
 ## 下载 1.0
 
-在[版本 1.0 发布页](https://github.com/alittleyellowfish/TripleThreatTask-Recovery-Tool/releases/tag/v1.0)直接下载 `1.0.zip`，解压后运行 `三面混沌任务恢复工具-v1.0.exe`。
+1. 打开[版本 1.0 发布页](https://github.com/alittleyellowfish/TripleThreatTask-Recovery-Tool/releases/tag/v1.0)，下载 1.0.zip。
+2. 解压后运行「三面混沌任务恢复工具-v1.0.exe」。
 
 ## 使用
 
