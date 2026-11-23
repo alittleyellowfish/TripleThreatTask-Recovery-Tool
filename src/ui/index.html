@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>三面混沌任务恢复</title>
+  <style>
+    :root {
+      --paper: #faf8f5;
+      --surface: #fffdfb;
+      --ink: #26211d;
+      --body: #4a4543;
+      --muted: #6f665f;
+      --line: #e8ddd3;
+      --clay: #d97757;
+      --deep-clay: #a34d34;
+      --peach: #f5e6d3;
+      --green: #41664a;
+      --green-bg: #e9f0e6;
+      --amber: #795225;
+      --amber-bg: #faf1e1;
+      --coral: #963f3b;
+      --coral-bg: #f9eeeb;
+      --sans: 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif;
+      --serif: 'Songti SC', 'SimSun', serif;
+      --mono: 'Cascadia Mono', Consolas, 'Microsoft YaHei UI', monospace;
+      --ease: cubic-bezier(.22,.65,.35,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.6 var(--sans);
+    }
+    html, dialog { scrollbar-width: none; }
+    button, select, input { font: inherit; }
+    button, select { color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; }
+    button, select { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 3px solid var(--deep-clay); outline-offset: 3px; }
+    p, h1, h2 { margin: 0; }
+    fieldset { min-width: 0; }
+    code { font-family: var(--mono); }
+    .icon { display: inline-block; width: 20px; height: 20px; flex: 0 0 auto; vertical-align: middle; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+    .stage { min-height: 100vh; }
+    .window {
+      min-height: 100vh; background: var(--paper);
+    }
+    .titlebar { position: sticky; top: 0; z-index: 1; user-select: none; min-height: 44px; display: flex; justify-content: space-between; align-items: stretch; background: #f5efe8; border-bottom: 1px solid var(--line); }
+    .app-name { flex: 1; display: flex; align-items: center; gap: 9px; padding: 8px 16px; font-size: 12px; color: #574b41; }
+    .app-mark { display: block; width: 23px; height: 23px; flex: 0 0 auto; }
+    .window-controls { display: flex; flex: 0 0 auto; }
+    .window-controls button { background: transparent; border: 0; padding: 0; width: 44px; color: #685c53; }
+    .window-controls button:hover { background: #eee2d5; color: var(--ink); }
+    .window-controls button:last-child:hover { background: #f2dbd5; color: var(--coral); }
+    .window-controls button:focus-visible { outline-offset: -4px; }
+    .window-controls .icon { width: 14px; height: 14px; }
+    .window-content { max-width: 900px; margin: 0 auto; padding: 36px 40px 32px; }
+    .heading { margin-bottom: 26px; }
+    h1 { font: 400 clamp(31px, 4.6vw, 49px)/1.24 var(--serif); }
+    .heading-art { display: block; width: 8.36em; max-width: 100%; height: auto; }
+    .subtitle { margin-top: 8px; color: var(--muted); font-size: 15px; letter-spacing: .1em; }
+    .window-content[data-view="success"] { padding-top: 27px; }
+    .window-content[data-view="success"] .heading { margin-bottom: 19px; }
+    .window-content[data-view="success"] h1 { font-size: clamp(30px, 4.5vw, 40px); }
+    .window-content[data-view="success"] .subtitle { margin-top: 5px; }
+
+    .drop {
+      display: flex; width: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 15px;
+      min-height: 216px; padding: 22px; border: 1.5px dashed #bf917a; border-radius: 14px;
+      background: radial-gradient(ellipse at 50% 38%, #f7e6d6 0, transparent 61%), #f8efe5;
+      color: #623b2c; font-size: 21px; font-weight: 650;
+      transition: background .22s var(--ease), border-color .22s var(--ease), box-shadow .22s var(--ease);
+    }
+    .drop:hover, .drop.is-over { border-color: var(--deep-clay); background: #f4e1d1; box-shadow: inset 0 0 0 1px #c9896d; }
+    .drop.is-over { border-style: solid; }
+    .drop:disabled { background: #f2ece5; border-color: #c7b9ac; color: #71665b; }
+    .drop.compact { flex-direction: row; gap: 10px; min-height: 55px; padding: 12px; font-size: 15px; }
+    .drop .compact-icon { display: none; }
+    .drop.compact .compact-icon { display: inline-block; }
+    .drop.compact .drop-art { display: none; }
+    .drop-art { position: relative; display: block; width: 135px; height: 91px; isolation: isolate; }
+    .drop-art::before {
+      position: absolute; content: ''; width: 91px; height: 83px; left: 22px; top: 4px;
+      background: #ecc2a349; border-radius: 52% 43% 46% 57% / 53% 52% 47% 44%; transform: rotate(-13deg);
+    }
+    .paper-back, .paper-front { position: absolute; display: block; border: 1px solid #bc876e; box-shadow: 0 5px 12px #a05e3420; }
+    .paper-back { top: 17px; left: 38px; width: 48px; height: 62px; border-radius: 8px; background: #efcfb8; transform: rotate(-15deg); }
+    .paper-front {
+      display: grid; place-items: center; top: 12px; left: 54px; width: 48px; height: 63px;
+      border-radius: 8px 11px 8px 8px; background: #fff9ef; color: var(--deep-clay); transform: rotate(10deg);
+    }
+    .paper-front .icon { width: 25px; height: 25px; transform: rotate(-10deg); }
+    .spark { position: absolute; width: 12px; height: 12px; color: #b15d40; }
+    .spark::before, .spark::after { content: ''; position: absolute; background: currentColor; border-radius: 2px; }
+    .spark::before { left: 5px; top: 0; width: 1.5px; height: 12px; transform: rotate(8deg); }
+    .spark::after { left: 0; top: 5px; width: 12px; height: 1.5px; transform: rotate(-6deg); }
+    .spark.left { top: 26px; left: 14px; transform: scale(.72); }
+    .spark.right { top: 15px; left: 109px; }
+    .art-dot { position: absolute; top: 70px; left: 109px; width: 4px; height: 4px; border-radius: 100%; background: #bc785b; }
+
+    .location { margin-top: 22px; }
+    .location-label { display: flex; align-items: baseline; gap: 8px; color: var(--body); }
+    .location-label .icon { width: 17px; height: 17px; position: relative; top: 3px; color: var(--deep-clay); }
+    .location-label code { font-size: .97em; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+    .path-panel { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; }
+    .path-panel code, .dialog-path {
+      display: block; min-width: 0; overflow-wrap: anywhere; user-select: text; color: #53443a;
+      font: 13px/1.65 var(--mono);
+    }
+    .location .path-panel { margin-top: 8px; padding: 7px 8px 7px 12px; min-height: 42px; border: 1px solid var(--line); background: #f4eee7; border-radius: 8px; }
+    .help-text { margin-top: 6px; color: var(--muted); font-size: 13px; }
+    .copy { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: #743c2a; border-radius: 7px; padding: 4px 8px; white-space: nowrap; font-size: 12px; }
+    .copy .icon { width: 14px; height: 14px; }
+    .copy:hover { background: #ebded2; }
+    .backup { display: flex; align-items: flex-start; gap: 10px; margin-top: 19px; padding: 12px 14px; border: 1px solid #ead6b1; border-radius: 10px; background: var(--amber-bg); color: #664822; font-size: 13px; }
+    .backup .icon { width: 17px; height: 17px; margin-top: 2px; color: var(--amber); }
+    .backup strong { font-weight: 650; }
+
+    .result { margin-top: 23px; }
+    .idle { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 15px; }
+    .idle-dot { width: 7px; height: 7px; background: #aa9584; border-radius: 50%; }
+    .card { border: 1px solid #e5d9ce; border-radius: 14px; background: var(--surface); padding: 20px 22px; box-shadow: 0 3px 16px #9a765511; }
+    .card-title { display: flex; align-items: center; gap: 12px; }
+    .card-title h2, .dialog-title { font: 650 23px/1.35 var(--sans); }
+    .card-title h2[tabindex="-1"]:focus { outline: none; }
+    .result h2, .result .actions, .save-feedback { scroll-margin: 56px 0 16px; }
+    .card-title p { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+    .state-icon { display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; }
+    .state-icon.success { color: var(--green); background: var(--green-bg); }
+    .state-icon.error { color: var(--coral); background: var(--coral-bg); }
+    .state-icon.waiting { color: var(--deep-clay); background: #f6e8df; }
+    .slot { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px 18px; margin: 16px 0 0; padding: 10px 14px; border-radius: 8px; background: #f5efe8; }
+    .slot dt, .path-label { margin: 0; font-size: 12px; color: var(--muted); }
+    .slot dd { margin: 2px 0 0; font-size: 15px; font-weight: 650; overflow-wrap: anywhere; }
+    .slot time { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .summary { margin-top: 14px; color: var(--body); font-size: 14px; }
+    .summary p + p { margin-top: 3px; }
+    .summary .help-text { margin-top: 5px; }
+    .result-details { display: grid; grid-template-columns: minmax(177px, .8fr) 2fr; gap: 18px; align-items: center; margin-top: 16px; }
+    .result-details .slot { grid-template-columns: 1fr; gap: 7px; margin: 0; }
+    .result-details .summary { margin: 0; }
+    .load-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; padding: 9px 11px; color: #36553c; background: #edf2e9; border-radius: 8px; font-size: 13px; }
+    .load-note .icon { width: 16px; height: 16px; margin-top: 2px; }
+    .result-path { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 15px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 7px 15px; border: 1px solid #d8c7b8; border-radius: 24px; background: var(--surface); color: #55453b; font-size: 13px; font-weight: 650; transition: background .2s var(--ease), border-color .2s var(--ease); }
+    .button .icon { width: 16px; height: 16px; }
+    .button:hover { background: #f5ece3; border-color: #bda797; }
+    .button.primary { background: var(--deep-clay); border-color: var(--deep-clay); color: #fffaf6; }
+    .button.primary:hover { background: #843c29; border-color: #843c29; }
+    .button:disabled { opacity: .62; }
+    .save-feedback { margin-top: 14px; padding: 12px 14px; border: 1px solid #cddcc9; border-radius: 10px; background: #eef3eb; color: #36553c; }
+    .save-feedback.error { background: var(--coral-bg); border-color: #edd2ce; color: #773831; }
+    .save-feedback.pending { background: #f7efe5; border-color: var(--line); color: var(--body); }
+    .feedback-title { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 650; }
+    .feedback-title .icon { width: 16px; height: 16px; }
+    .save-feedback p { font-size: 13px; }
+    .save-feedback .actions { margin-top: 8px; }
+    .error-copy { margin-top: 12px; color: var(--body); }
+    .error-copy p + p { margin-top: 4px; }
+    .progress-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 17px 0 0; padding: 0; list-style: none; }
+    .progress-track li { border-top: 4px solid #e9ded4; padding-top: 5px; border-radius: 3px; color: var(--muted); font-size: 12px; }
+    .progress-track li.done { border-color: #82a184; color: var(--green); }
+    .progress-track li.current { border-color: var(--clay); color: #823e2d; font-weight: 650; }
+    .spinner { display: inline-block; flex: 0 0 auto; width: 20px; height: 20px; border: 2px solid #e5bdab; border-top-color: var(--deep-clay); border-radius: 50%; animation: spin 1s cubic-bezier(.55,.36,.42,.68) infinite; }
+    .save-feedback .spinner { width: 15px; height: 15px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    dialog { width: min(568px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; padding: 0; border: 1px solid #d8c7b8; border-radius: 14px; color: var(--ink); background: var(--paper); box-shadow: 0 20px 65px #3a281941; }
+    dialog::backdrop { background: #33231b66; }
+    .dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 16px 20px 14px; background: #f5efe8; border-bottom: 1px solid var(--line); }
+    .dialog-title { font-size: 19px; }
+    .icon-button { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; margin: -2px -4px -2px 0; padding: 0; border: 0; border-radius: 6px; color: var(--muted); background: transparent; }
+    .icon-button:hover { background: #ede0d3; }
+    .icon-button .icon { width: 17px; height: 17px; }
+    .dialog-body { padding: 17px 20px 20px; }
+    .dialog-body > p { font-size: 14px; color: var(--body); }
+    .dialog-path { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #f4eee7; }
+    .dialog-actions { justify-content: flex-end; margin-top: 16px; }
+    @media (max-width: 700px) {
+      .window-content { padding: 24px 20px; }
+      .heading { margin-bottom: 20px; }
+      .drop { min-height: 172px; gap: 8px; padding: 14px; font-size: 19px; }
+      .drop-art { transform: scale(.86); }
+    }
+    @media (max-width: 575px) {
+      .result-details { grid-template-columns: 1fr; gap: 10px; }
+      .result-details .slot { grid-template-columns: 1fr 1.4fr; }
+    }
+    @media (max-width: 405px) {
+      .window-content { padding: 20px 14px; }
+      .card, .dialog-body, .dialog-head { padding-left: 13px; padding-right: 13px; }
+      .window-controls button { width: 29px; }
+      .app-name { padding-left: 10px; }
+      .path-panel { flex-wrap: wrap; }
+      .path-panel .copy { margin-left: -5px; }
+      .slot, .result-details .slot { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v13m-5-5 5 5 5-5M5 20h14"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M3 18V7a2 2 0 0 1 2-2h4l3 3h6a2 2 0 0 1 2 2v2M5 20h13a2 2 0 0 0 2-1.5l1.5-5a1 1 0 0 0-1-1.5H8a2 2 0 0 0-2 1.5L4 20"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s7-3 7-10V5l-7-3-7 3v7c0 7 7 10 7 10Z"/><path d="M12 8v4m0 4h.01"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L19 7"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5m0 4h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-max" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx=".8"/></symbol>
+    <symbol id="i-restore" viewBox="0 0 24 24"><path d="M8 8V5h11v11h-3"/><rect x="5" y="8" width="11" height="11" rx=".8"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <div class="stage" id="stage">
+    <main class="window" aria-labelledby="app-title">
+      <div class="titlebar">
+        <div class="app-name pywebview-drag-region">
+          <img class="app-mark" src="app-icon.png" alt="">
+          <span>三面混沌任务恢复</span>
+        </div>
+        <div class="window-controls" id="window-controls"></div>
+      </div>
+      <div class="window-content" id="window-content">
+        <header class="heading">
+          <h1 id="app-title"><img class="heading-art" src="title-heading.png" alt="三面混沌任务恢复"></h1>
+          <p class="subtitle">存档修复工具</p>
+        </header>
+
+        <button type="button" class="drop" id="drop" disabled aria-label="把存档拖到这里，或点击选择存档" aria-describedby="file-hint">
+          <span class="drop-art" aria-hidden="true">
+            <span class="paper-back"></span>
+            <span class="paper-front"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="#i-down"/></svg></span>
+            <span class="spark left"></span><span class="spark right"></span><span class="art-dot"></span>
+          </span>
+          <svg class="icon compact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-down"/></svg>
+          <span>把存档拖到这里</span>
+        </button>
+
+        <section class="location" aria-label="存档位置">
+          <p class="location-label" id="file-hint">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-folder"/></svg>
+            <span>请拖入以下文件夹中的 <code>PBZSaveGame.sav</code></span>
+          </p>
+          <div class="path-panel">
+            <code>steamapps<wbr>\common<wbr>\PBZ<wbr>\ProjectPBZ<wbr>\Saved<wbr>\SaveGames<wbr>\Steam<wbr>\存档文件夹</code>
+            <button type="button" class="copy" data-action="copy">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-copy"/></svg>复制路径
+            </button>
+          </div>
+          <p class="help-text">最后一级文件夹通常以你的 Steam 数字 ID 命名。</p>
+        </section>
+
+        <aside class="backup" aria-label="备份提示">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-shield"/></svg>
+          <p><strong>请提前备份原存档。</strong>替换游戏存档前，请先退出游戏。</p>
+        </aside>
+
+        <section id="result" class="result" aria-label="处理结果"><p class="idle"><span class="idle-dot" aria-hidden="true"></span>等待选择存档</p></section>
+      </div>
+    </main>
+  </div>
+  <div class="sr-only" role="status" id="announcement"></div>
+  <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

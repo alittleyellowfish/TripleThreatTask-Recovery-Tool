@@ -39,10 +39,8 @@ py -3.11 -m venv .venv
 | 路径 | 内容 |
 | --- | --- |
 | `src/` | Windows 应用、界面、修复逻辑和存档编解码资源 |
-| [`docs/design/`](docs/design/) | 界面需求、交互原型与预览图 |
 | [`docs/third-party-notices.md`](docs/third-party-notices.md) | 第三方组件及字体字样来源 |
-| `build/`、`dist/` | 构建缓存和发布产物 |
-| `work/` | 本地开发资料和历史归档 |
+| `build/`、`dist/` | 本地构建缓存和发布产物 |
 
 ## 许可
 

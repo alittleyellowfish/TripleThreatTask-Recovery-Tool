@@ -1,0 +1,15 @@
+/build/
+/dist/
+/work/
+/outputs/
+/docs/design/
+/.venv/
+__pycache__/
+*.py[cod]
+*.spec
+*.exe
+
+# Local game data and generated saves.
+*.[sS][aA][vV]
+PBZ-已修复-*/
+steam_autocloud.vdf
