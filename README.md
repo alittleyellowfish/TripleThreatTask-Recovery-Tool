@@ -2,6 +2,8 @@
 
 《影之刃零》Steam 版的本地 Windows 存档修复工具。适用于「三面混沌」任务失败、雪天镜林的第二场玉琮战未进入第三阶段的存档。
 
+本项目使用 Codex 制作并维护。
+
 ## 下载 1.0
 
 1. 打开[版本 1.0 发布页](https://github.com/alittleyellowfish/TripleThreatTask-Recovery-Tool/releases/tag/v1.0)，下载 1.0.zip。
