@@ -11,3 +11,4 @@
 | [cryptography](https://github.com/pyca/cryptography) | AES-GCM 加密与认证，Apache-2.0 或 BSD-3-Clause。 |
 | [PyInstaller](https://github.com/pyinstaller/pyinstaller) | 可执行文件打包，GPL-2.0-or-later，含打包分发例外。 |
 | [京華老宋体（KingHwaOldSong）](https://zhuanlan.zhihu.com/p/1915922891633043436) | 特里王（活字攷古）制作。项目中的简体标题和「修」字图标是用该字体排印的图片资源。 |
+

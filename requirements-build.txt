@@ -2,3 +2,4 @@ cryptography==46.0.3
 pyinstaller==6.16.0
 pywebview==6.2.1
 pythonnet==3.2.1
+

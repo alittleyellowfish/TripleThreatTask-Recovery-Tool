@@ -59,3 +59,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Output (Join-Path $distDir "$artifactName.exe")
+
