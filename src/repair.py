@@ -30,6 +30,7 @@ BRANCH_UNSTARTED = 'EBranchType::None'
 UNSET_DATE = '0001.01.01-00.00.00'
 SAVE_DATE = '%Y.%m.%d-%H.%M.%S'
 GAMEPLAY_SLOT = re.compile(r'(?:AutoSave|ManualSave|NightmareRun)\d+\Z')
+MANUAL_SLOT = re.compile(r'ManualSave(\d+)\Z')
 
 TAG_PREFIX = 'fjzl.三头魔偶.'
 REQUIRED_TAGS = (
@@ -73,6 +74,8 @@ class RepairResult:
     replacement_weapon: str | None
     continue_slot: str | None
     output_sha256: str
+    slot_label: str
+    continue_slot_label: str | None
 
 
 class QuestStatusError(EditorError):
@@ -119,6 +122,31 @@ def latest_slot(entries):
         return latest_date, selected
     require(all(e['raw'] == tied[0]['raw'] for e in tied), '有多个内容不同的最新存档槽，无法自动确定目标。')
     return latest_date, tied[0]
+
+
+def manual_slot_numbers(entries):
+    manual = []
+    for entry in entries:
+        name = entry['name']
+        match = MANUAL_SLOT.fullmatch(name)
+        if match:
+            date = datetime.strptime(entry['json']['PBZGameSystem']['DateTimeString'], SAVE_DATE)
+            manual.append((int(match[1]), date, name))
+
+    # The load menu numbers manual saves newest first, preserving slot order on ties.
+    manual.sort(key=lambda item: item[0])
+    manual.sort(key=lambda item: item[1], reverse=True)
+    return {name: position for position, (_, _, name) in enumerate(manual, start=1)}
+
+
+def slot_label(name: str, manual_numbers: dict[str, int]) -> str:
+    if name in manual_numbers:
+        return f'手动档 {manual_numbers[name]}'
+    for prefix, label, offset in (('AutoSave', '自动档', 1), ('NightmareRun', '六十六天', 0)):
+        suffix = name.removeprefix(prefix)
+        if suffix != name and suffix.isdecimal():
+            return f'{label} {int(suffix) + offset}'
+    return name
 
 
 def restore_quest(document: LosslessJSON):
@@ -290,6 +318,7 @@ def repair_save(
     *,
     on_progress: Callable[[str, str, datetime], None] | None = None,
 ) -> RepairResult:
+    """Report the load menu's slot label to the desktop progress callback."""
     source = source.resolve(strict=True)
     require(source.is_file() and source.suffix.casefold() == '.sav', '请选择一个 .sav 文件。')
     require(12 <= source.stat().st_size <= MAX_FILE_BYTES, '存档文件大小无效。')
@@ -301,12 +330,14 @@ def repair_save(
     entries = container.decode(raw)
     saved_at, target = latest_slot(entries)
     name = target['name']
+    manual_numbers = manual_slot_numbers(entries)
+    target_label = slot_label(name, manual_numbers)
     if on_progress:
-        on_progress('repair', name, saved_at)
+        on_progress('repair', target_label, saved_at)
     patched, refunded, replacement = patch_slot(target['raw'])
     rebuilt = container.encode(entries, {name: patched})
     if on_progress:
-        on_progress('verify', name, saved_at)
+        on_progress('verify', target_label, saved_at)
     reloaded = container.decode(rebuilt)
     require(len(entries) == len(reloaded), '生成存档的槽数校验失败。')
     for original, result in zip(entries, reloaded):
@@ -330,6 +361,8 @@ def repair_save(
         raise
     advanced = next((entry['json'] for entry in entries if entry['name'] == '__Advanced__'), {})
     continue_slot = advanced.get('LastContinueSlot')
+    if not isinstance(continue_slot, str):
+        continue_slot = None
     return RepairResult(path, name, saved_at, refunded, replacement,
-                        continue_slot if isinstance(continue_slot, str) else None,
-                        sha256(rebuilt).hexdigest())
+                        continue_slot, sha256(rebuilt).hexdigest(), target_label,
+                        slot_label(continue_slot, manual_numbers) if continue_slot is not None else None)

@@ -20,19 +20,8 @@ from window_frame import WindowFrame
 TITLE = '三面混沌任务恢复'
 
 
-def slot_label(name: str | None) -> str | None:
-    if name is None:
-        return None
-    for prefix, label, offset in (
-        ('ManualSave', '手动档', 0), ('AutoSave', '自动档', 1), ('NightmareRun', '六十六天', 0),
-    ):
-        if name.startswith(prefix) and name[len(prefix):].isdigit():
-            return f'{label} {int(name[len(prefix):]) + offset}'
-    return name
-
-
-def slot_details(slot: str, date: datetime) -> dict:
-    return {'slot': slot_label(slot), 'time': date.strftime('%Y-%m-%d %H:%M:%S'),
+def slot_details(label: str, date: datetime) -> dict:
+    return {'slot': label, 'time': date.strftime('%Y-%m-%d %H:%M:%S'),
             'timeISO': date.isoformat(timespec='seconds')}
 
 
@@ -197,9 +186,9 @@ class DesktopApp:
         filename = self._source.name
         self._emit('progress', phase=phase, file=filename, detail=detail)
 
-        def progress(next_phase, slot, date):
+        def progress(next_phase, label, date):
             nonlocal phase, detail
-            phase, detail = next_phase, slot_details(slot, date)
+            phase, detail = next_phase, slot_details(label, date)
             self._emit('progress', phase=phase, file=filename, detail=detail)
 
         try:
@@ -221,8 +210,8 @@ class DesktopApp:
             return
 
         result = self._result
-        detail = slot_details(result.slot, result.saved_at)
-        detail.update(refunded=result.refunded, path=str(result.path), continueSlot=slot_label(result.continue_slot))
+        detail = slot_details(result.slot_label, result.saved_at)
+        detail.update(refunded=result.refunded, path=str(result.path), continueSlot=result.continue_slot_label)
         self._emit('success', detail=detail)
 
     def choose_destination(self):

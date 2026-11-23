@@ -4,10 +4,16 @@
 
 本项目使用 Codex 制作并维护。
 
-## 下载 1.0
+## 下载 1.1
 
-1. 打开[版本 1.0 发布页](https://github.com/alittleyellowfish/TripleThreatTask-Recovery-Tool/releases/tag/v1.0)，下载 1.0.zip。
-2. 解压后运行「三面混沌任务恢复工具-v1.0.exe」。
+1. 打开[版本 1.1 发布页](https://github.com/alittleyellowfish/TripleThreatTask-Recovery-Tool/releases/tag/v1.1)，下载 1.1.zip。
+2. 解压后运行「三面混沌任务恢复工具-v1.1.exe」。
+
+## 1.1 更新内容
+
+- 修复工具显示的手动档编号与游戏「载入游戏」列表不一致的问题。
+- 手动档按保存时间从新到旧编号。同一时间保存的手动档按内部槽号排序。例如，最新手动档的内部编号是 ManualSave3 时，工具现在显示「手动档 1」。
+- 修复进度、结果页和载入提示统一使用游戏菜单的编号。
 
 ## 使用
 
@@ -35,7 +41,7 @@ py -3.11 -m venv .venv
 .\build.ps1 -Python .\.venv\Scripts\python.exe
 ```
 
-构建脚本从 [`VERSION`](VERSION) 读取版本号，并写入 Windows 文件的版本信息。1.0 版生成在 `dist/三面混沌任务恢复工具-v1.0.exe`。
+构建脚本从 [`VERSION`](VERSION) 读取版本号，并写入 Windows 文件的版本信息。1.1 版生成在 `dist/三面混沌任务恢复工具-v1.1.exe`。
 
 ## 目录
 
